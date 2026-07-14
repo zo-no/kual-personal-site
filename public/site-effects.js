@@ -116,6 +116,36 @@
 
   motionSurfaces.forEach((surface) => motionObserver.observe(surface));
 
+  const sectionLinks = Array.from(document.querySelectorAll("[data-section-link]"));
+  const homeSections = sectionLinks
+    .map((link) => document.getElementById(link.dataset.sectionLink))
+    .filter(Boolean);
+
+  if (sectionLinks.length && homeSections.length) {
+    const sectionVisibility = new Map(homeSections.map((section) => [section.id, 0]));
+    const sectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          sectionVisibility.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0);
+        });
+
+        const activeSection = Array.from(sectionVisibility.entries())
+          .sort((left, right) => right[1] - left[1])[0];
+        if (!activeSection || activeSection[1] === 0) return;
+
+        sectionLinks.forEach((link) => {
+          const active = link.dataset.sectionLink === activeSection[0];
+          link.classList.toggle("is-active", active);
+          if (active) link.setAttribute("aria-current", "location");
+          else link.removeAttribute("aria-current");
+        });
+      },
+      { root: null, rootMargin: "-18% 0px -32% 0px", threshold: [0, 0.2, 0.4, 0.6, 0.8] },
+    );
+
+    homeSections.forEach((section) => sectionObserver.observe(section));
+  }
+
   const signalField = document.querySelector(".signal-field");
   const signalCanvas = signalField?.querySelector("[data-signal-canvas]");
   const filterToggle = signalField?.querySelector("[data-filter-toggle]");

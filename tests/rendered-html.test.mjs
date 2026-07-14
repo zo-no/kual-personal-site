@@ -24,6 +24,7 @@ test("renders the personal homepage", async () => {
   assert.match(html, /data-signal-canvas/);
   assert.match(html, /data-filter-toggle/);
   assert.match(html, /data-signal-node="writing"/);
+  assert.match(html, /data-section-link="writing"/);
 });
 
 test("renders the about and blog routes", async () => {

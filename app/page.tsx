@@ -18,6 +18,12 @@ export default function Home() {
   return (
     <main>
       <SiteHeader />
+      <nav className="section-rail" aria-label="首页章节导航">
+        <a href="#about" data-section-link="about" aria-label="关于我"><span>01</span></a>
+        <a href="#practice" data-section-link="practice" aria-label="工作方法"><span>02</span></a>
+        <a href="#writing" data-section-link="writing" aria-label="最近文章"><span>03</span></a>
+        <a href="#exploring" data-section-link="exploring" aria-label="正在构建"><span>04</span></a>
+      </nav>
       <section className="hero" id="top" aria-labelledby="hero-title">
         <div className="hero-copy">
           <p className="eyebrow hero-enter hero-enter-one">PRODUCT-MINDED ENGINEER · AI BUILDER</p>
@@ -104,7 +110,7 @@ export default function Home() {
         </ol>
       </section>
 
-      <section className="writing section-shell" aria-labelledby="writing-title">
+      <section className="writing section-shell" id="writing" aria-labelledby="writing-title">
         <div className="section-kicker"><span>03</span><p>SELECTED WRITING / 最近文章</p></div>
         <div className="writing-heading">
           <h2 id="writing-title">记录我如何理解产品、AI 与系统。</h2>
