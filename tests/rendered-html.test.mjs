@@ -29,6 +29,8 @@ test("renders the personal homepage", async () => {
   assert.match(html, /data-project-step="ai-native"/);
   assert.match(html, /data-section-link="writing"/);
   assert.match(html, /data-route="blog"/);
+  assert.doesNotMatch(html, /id="exploring"/);
+  assert.match(html, /href="\/#story-ai-native"/);
 });
 
 test("renders the about and blog routes", async () => {

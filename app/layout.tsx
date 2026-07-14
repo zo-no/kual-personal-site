@@ -44,7 +44,7 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {children}
-        <script src="/site-effects.js?v=20260714-project-lines" defer />
+        <script src="/site-effects.js?v=20260714-particle-clusters" defer />
       </body>
     </html>
   );

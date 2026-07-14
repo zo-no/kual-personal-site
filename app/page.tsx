@@ -22,7 +22,6 @@ export default function Home() {
         <a href="#about" data-section-link="about" aria-label="关于我"><span>01</span></a>
         <a href="#practice" data-section-link="practice" aria-label="工作方法"><span>02</span></a>
         <a href="#writing" data-section-link="writing" aria-label="最近文章"><span>03</span></a>
-        <a href="#exploring" data-section-link="exploring" aria-label="正在构建"><span>04</span></a>
       </nav>
       <section className="hero" id="top" aria-labelledby="hero-title">
         <div className="hero-story">
@@ -52,7 +51,6 @@ export default function Home() {
                 <p className="project-story-meta"><span>{item.signalIndex}</span>{item.tag}</p>
                 <h2>{item.title}</h2>
                 <p>{item.description}</p>
-                <a href="#exploring">查看项目脉络 <span aria-hidden="true">↘</span></a>
               </article>
             ))}
           </div>
@@ -110,14 +108,6 @@ export default function Home() {
           <a className="inline-arrow" href="/blog">全部文章 <span aria-hidden="true">→</span></a>
         </div>
         <div className="article-grid">{articles.map((article) => <ArticleCard key={article.slug} article={article} />)}</div>
-      </section>
-
-      <section className="exploring section-shell" id="exploring" aria-labelledby="exploring-title">
-        <div className="section-kicker"><span>04</span><p>CURRENTLY EXPLORING / 正在构建</p></div>
-        <div className="exploring-heading"><h2 id="exploring-title">在确定的工作之外，追踪未来的需求。</h2><p>这些主题正在我的工作、学习与长期输出里交叉生长。</p></div>
-        <div className="exploration-list">
-          {explorations.map((item) => <article key={item.index} className="exploration-item"><span className="exploration-index">{item.index}</span><h3>{item.title}</h3><p>{item.description}</p><span className="exploration-tag">{item.tag}</span><span className="exploration-arrow" aria-hidden="true">↗</span></article>)}
-        </div>
       </section>
 
       <section className="closing" id="contact" aria-labelledby="closing-title">

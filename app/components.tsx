@@ -23,7 +23,7 @@ export function SiteHeader() {
       <nav aria-label="主导航">
         <a href="/about" data-route="about">关于</a>
         <a href="/blog" data-route="blog">文章</a>
-        <a href="/#exploring">正在做</a>
+        <a href="/#story-ai-native">正在做</a>
       </nav>
       <span className="header-note">BEIJING · 2026</span>
     </header>

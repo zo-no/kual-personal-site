@@ -57,7 +57,6 @@
     ".about-copy",
     ".practice-list li",
     ".article-card",
-    ".exploration-item",
     ".profile-label",
     ".profile-copy",
     ".value-list article",
@@ -77,7 +76,6 @@
     ".about-statement",
     ".practice-heading",
     ".writing-heading",
-    ".exploring-heading",
     ".page-hero h1",
     ".article-hero h1",
   ];
@@ -89,7 +87,7 @@
   depthElements.forEach((element) => element.setAttribute("data-depth", ""));
 
   const staggerGroups = document.querySelectorAll(
-    ".practice-list, .article-grid, .exploration-list, .value-list",
+    ".practice-list, .article-grid, .value-list",
   );
 
   staggerGroups.forEach((group) => {
@@ -251,6 +249,16 @@
         projectCurves = projectKeys.map((key, lineIndex) => {
           const seed = (lineIndex + 1) * 41;
           const center = top + bandHeight * (lineIndex + 0.5);
+          const noiseClusters = Array.from({ length: 3 }, (_, clusterIndex) => ({
+            center: clamp(0.12 + clusterIndex * 0.34 + (seeded(seed + clusterIndex * 13) - 0.5) * 0.16, 0.08, 0.92),
+            radius: 0.055 + seeded(seed + clusterIndex * 29) * 0.1,
+            strength: 0.55 + seeded(seed + clusterIndex * 47) * 0.75,
+          }));
+          const noiseStrengthAt = (t) => noiseClusters.reduce((strongest, cluster) => {
+            const distance = Math.abs(t - cluster.center) / cluster.radius;
+            const strength = distance >= 1 ? 0 : (1 - distance) ** 2 * cluster.strength;
+            return Math.max(strongest, strength);
+          }, 0.08);
           const cleanYAt = (t) => {
             const direction = lineIndex === 0 ? -13 : lineIndex === 1 ? -7 : 10;
             const wave = Math.sin(t * Math.PI * (2.1 + lineIndex * 0.35) + lineIndex) * (8 + lineIndex * 2);
@@ -260,10 +268,13 @@
           const points = Array.from({ length: count }, (_, index) => {
             const t = index / (count - 1);
             const cleanY = cleanYAt(t);
-            const pulse = Math.sin(index * (1.31 + lineIndex * 0.2) + seed) * 10
-              + Math.sin(index * 0.43 + lineIndex) * 7;
-            const spike = index % (17 + lineIndex * 3) === 0
-              ? (seeded(index + seed) - 0.5) * Math.min(66, bandHeight * 0.48)
+            const strength = noiseStrengthAt(t);
+            const pulse = (
+              Math.sin(index * (1.31 + lineIndex * 0.2) + seed) * 11
+              + Math.sin(index * 0.43 + lineIndex) * 8
+            ) * strength;
+            const spike = strength > 0.24 && seeded(index * 3 + seed) > 0.82
+              ? (seeded(index + seed) - 0.5) * Math.min(74, bandHeight * 0.55) * strength
               : 0;
             return {
               t,
@@ -272,23 +283,36 @@
               rawY: cleanY + pulse + spike,
             };
           });
-          const dotCount = width < 560 ? 24 : 38;
+          const dotCount = width < 560 ? 28 : 48;
           const noisePoints = Array.from({ length: dotCount }, (_, index) => {
-            const t = seeded(index + seed + 12);
+            const cluster = noiseClusters[index % noiseClusters.length];
+            const spread = seeded(index + seed + 12) - seeded(index + seed + 84);
+            const t = clamp(cluster.center + spread * cluster.radius * 1.65, 0.02, 0.98);
             const cleanY = cleanYAt(t);
             return {
               x: mix(left, right, t),
-              y: cleanY + (seeded(index + seed + 71) - 0.5) * Math.min(78, bandHeight * 0.7),
-              size: 0.65 + seeded(index + seed + 20) * 1.35,
-              opacity: 0.12 + seeded(index + seed + 45) * 0.34,
+              y: cleanY + (seeded(index + seed + 71) - 0.5) * Math.min(92, bandHeight * 0.78) * cluster.strength,
+              size: 0.55 + seeded(index + seed + 20) ** 2 * 2.5,
+              opacity: 0.09 + seeded(index + seed + 45) ** 2 * 0.5,
+              phase: seeded(index + seed + 122) * Math.PI * 2,
+              drift: 1 + seeded(index + seed + 151) * 4,
             };
           });
+          const particleCount = width < 560 ? 11 : 18;
+          const flowParticles = Array.from({ length: particleCount }, (_, index) => ({
+            phase: seeded(index + seed + 201),
+            speed: 0.000018 + seeded(index + seed + 233) * 0.000035,
+            size: 0.75 + seeded(index + seed + 271) ** 2 * 2.2,
+            drift: 1.5 + seeded(index + seed + 301) * 5,
+            opacity: 0.22 + seeded(index + seed + 331) * 0.55,
+          }));
           return {
             key,
             bandTop: top + bandHeight * lineIndex,
             bandBottom: top + bandHeight * (lineIndex + 1),
             points,
             noisePoints,
+            flowParticles,
           };
         });
       };
@@ -412,15 +436,22 @@
         });
       };
 
-      const drawNoisePoints = () => {
+      const drawNoisePoints = (timestamp) => {
         projectCurves.forEach((curve, lineIndex) => {
           curve.noisePoints.forEach((point) => {
             const filtered = filterAmountAt(lineIndex, point.x);
-            const opacity = point.opacity * (1 - filtered * 0.97);
+            const pulse = 0.72 + Math.sin(timestamp * 0.0012 + point.phase) * 0.28;
+            const opacity = point.opacity * pulse * (1 - filtered * 0.97);
             if (opacity < 0.012) return;
             context.fillStyle = `rgba(${paper.join(", ")}, ${opacity})`;
             context.beginPath();
-            context.arc(point.x, point.y, point.size * (1 - filtered * 0.55), 0, Math.PI * 2);
+            context.arc(
+              point.x + Math.cos(timestamp * 0.0005 + point.phase) * point.drift * (1 - filtered),
+              point.y + Math.sin(timestamp * 0.0007 + point.phase) * point.drift * (1 - filtered),
+              point.size * (1 - filtered * 0.55),
+              0,
+              Math.PI * 2,
+            );
             context.fill();
           });
         });
@@ -443,6 +474,44 @@
           });
           context.stroke();
         });
+      };
+
+      const drawSignalParticles = (timestamp) => {
+        const effectiveProject = hoverProject || activeStoryProject;
+        context.save();
+        context.globalCompositeOperation = "lighter";
+        projectCurves.forEach((curve, lineIndex) => {
+          const progress = projectProgress[lineIndex];
+          const active = curve.key === effectiveProject;
+          curve.flowParticles.forEach((particle) => {
+            const t = (particle.phase + timestamp * particle.speed) % 1;
+            const x = mix(24, width - 24, t);
+            const filtered = filterAmountAt(lineIndex, x);
+            const unsettled = 1 - filtered;
+            const y = curveYAt(lineIndex, t)
+              + Math.sin(timestamp * 0.001 + particle.phase * 11) * particle.drift * unsettled;
+            const opacity = particle.opacity
+              * (active ? 1 : 0.48)
+              * (0.52 + progress * 0.48);
+            const color = active ? accent : paper;
+            const trail = 8 + particle.size * 5 + progress * 9;
+
+            context.strokeStyle = `rgba(${color.join(", ")}, ${opacity * 0.2})`;
+            context.lineWidth = Math.max(0.45, particle.size * 0.45);
+            context.beginPath();
+            context.moveTo(x - trail, curveYAt(lineIndex, clamp(t - trail / width)));
+            context.lineTo(x, y);
+            context.stroke();
+
+            context.shadowColor = `rgba(${color.join(", ")}, ${opacity})`;
+            context.shadowBlur = active ? 12 : 5;
+            context.fillStyle = `rgba(${color.join(", ")}, ${opacity})`;
+            context.beginPath();
+            context.arc(x, y, particle.size * (active ? 1.15 : 0.82), 0, Math.PI * 2);
+            context.fill();
+          });
+        });
+        context.restore();
       };
 
       const drawFocus = () => {
@@ -489,11 +558,12 @@
 
         context.clearRect(0, 0, width, height);
         drawFilterWindow();
-        drawNoisePoints();
+        drawNoisePoints(timestamp);
         drawCurves();
+        drawSignalParticles(timestamp);
         drawFocus();
         updateStatus();
-        if (moving) frameId = window.requestAnimationFrame(draw);
+        if (moving || visible) frameId = window.requestAnimationFrame(draw);
       };
 
       const startDrawing = () => {
@@ -627,7 +697,7 @@
   };
 
   const scheduleInitialization = () => {
-    window.setTimeout(initializeSiteEffects, 120);
+    window.setTimeout(() => window.requestAnimationFrame(initializeSiteEffects), 700);
   };
 
   if (document.readyState === "complete") {
