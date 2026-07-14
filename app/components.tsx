@@ -5,8 +5,9 @@ export function ParticleField() {
   return (
     <div className="particle-system" aria-hidden="true">
       <svg className="signal-curve-fallback" viewBox="0 0 800 520" preserveAspectRatio="none">
-        <path className="fallback-raw-line" d="M0 438 L38 414 L70 430 L112 365 L148 392 L188 326 L226 352 L264 294 L302 318 L342 244 L380 278 L420 218 L458 252 L498 176 L538 218 L578 142 L616 184 L656 102 L698 138 L742 66 L800 90" />
-        <path className="fallback-signal-line" d="M0 428 C120 398 168 354 250 318 C340 278 408 244 492 202 C586 155 672 116 800 82" />
+        <path className="fallback-project-line fallback-project-one" d="M0 132 C112 126 176 102 270 116 C372 132 432 96 532 108 C626 120 698 88 800 98" />
+        <path className="fallback-project-line fallback-project-two" d="M0 268 C96 248 174 274 260 252 C356 228 446 274 540 246 C640 216 706 244 800 218" />
+        <path className="fallback-project-line fallback-project-three" d="M0 414 C116 430 178 386 276 404 C374 422 444 374 540 392 C638 410 712 360 800 372" />
       </svg>
       <canvas className="signal-canvas" data-signal-canvas />
     </div>

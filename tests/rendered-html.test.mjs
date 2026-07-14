@@ -22,8 +22,11 @@ test("renders the personal homepage", async () => {
   assert.match(html, /href="\/about"/);
   assert.match(html, /href="\/blog"/);
   assert.match(html, /data-signal-canvas/);
-  assert.match(html, /data-filter-toggle/);
-  assert.match(html, /data-signal-node="writing"/);
+  assert.match(html, /data-filter-announcement/);
+  assert.match(html, /data-project-signal="ai-native"/);
+  assert.match(html, /data-project-signal="personal-os"/);
+  assert.match(html, /data-project-signal="research-writing"/);
+  assert.match(html, /data-project-step="ai-native"/);
   assert.match(html, /data-section-link="writing"/);
   assert.match(html, /data-route="blog"/);
 });

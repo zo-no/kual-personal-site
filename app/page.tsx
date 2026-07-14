@@ -9,9 +9,9 @@ const practices = [
 ];
 
 const explorations = [
-  { index: "A", title: "AI 原生产品", description: "探索 Agent 如何真正进入产品闭环，而不只是停留在一次对话。", tag: "PRODUCT × AI" },
-  { index: "B", title: "个人操作系统", description: "用目标地图、日记与自动化，把长期生活变成可持续迭代的系统。", tag: "SYSTEM × LIFE" },
-  { index: "C", title: "研究与表达", description: "从行业研究到公开写作，让判断被看见，也让知识开始复利。", tag: "RESEARCH × WRITING" },
+  { id: "ai-native", index: "A", signalIndex: "01", title: "AI 原生产品", description: "探索 Agent 如何真正进入产品闭环，而不只是停留在一次对话。", tag: "PRODUCT × AI" },
+  { id: "personal-os", index: "B", signalIndex: "02", title: "个人操作系统", description: "用目标地图、日记与自动化，把长期生活变成可持续迭代的系统。", tag: "SYSTEM × LIFE" },
+  { id: "research-writing", index: "C", signalIndex: "03", title: "研究与表达", description: "从行业研究到公开写作，让判断被看见，也让知识开始复利。", tag: "RESEARCH × WRITING" },
 ];
 
 export default function Home() {
@@ -25,66 +25,59 @@ export default function Home() {
         <a href="#exploring" data-section-link="exploring" aria-label="正在构建"><span>04</span></a>
       </nav>
       <section className="hero" id="top" aria-labelledby="hero-title">
-        <div className="hero-copy">
-          <p className="eyebrow hero-enter hero-enter-one">PRODUCT-MINDED ENGINEER · AI BUILDER</p>
-          <h1 id="hero-title" className="hero-enter hero-enter-two">
-            把模糊问题，<br /><em>拆成能落地的系统。</em>
-          </h1>
-          <p className="hero-intro hero-enter hero-enter-three">
-            我是 Kual。我在产品体验、工程实现与 AI Agent 之间工作，
-            喜欢找到噪声里的信号，把一次答案做成可以重复使用的方法。
-          </p>
-          <div className="hero-actions hero-enter hero-enter-four">
-            <a className="primary-link" href="/blog">读我的文章 <span aria-hidden="true">↘</span></a>
-            <a className="text-link" href="/about">先认识我</a>
+        <div className="hero-story">
+          <div className="hero-copy">
+            <p className="eyebrow hero-enter hero-enter-one">PRODUCT-MINDED ENGINEER · AI BUILDER</p>
+            <h1 id="hero-title" className="hero-enter hero-enter-two">
+              把模糊问题，<br /><em>拆成能落地的系统。</em>
+            </h1>
+            <p className="hero-intro hero-enter hero-enter-three">
+              我是 Kual。我在产品体验、工程实现与 AI Agent 之间工作，
+              喜欢找到噪声里的信号，把一次答案做成可以重复使用的方法。
+            </p>
+            <div className="hero-actions hero-enter hero-enter-four">
+              <a className="primary-link" href="/blog">读我的文章 <span aria-hidden="true">↘</span></a>
+              <a className="text-link" href="/about">先认识我</a>
+            </div>
+          </div>
+
+          <div className="project-story-list" aria-label="正在探索的三个项目方向">
+            {explorations.map((item) => (
+              <article
+                className="project-story"
+                data-project-step={item.id}
+                id={`story-${item.id}`}
+                key={item.id}
+              >
+                <p className="project-story-meta"><span>{item.signalIndex}</span>{item.tag}</p>
+                <h2>{item.title}</h2>
+                <p>{item.description}</p>
+                <a href="#exploring">查看项目脉络 <span aria-hidden="true">↘</span></a>
+              </article>
+            ))}
           </div>
         </div>
 
-        <div className="signal-field" aria-label="产品、AI、系统与写作的思维连接图">
+        <div className="signal-field" aria-label="AI 原生产品、个人操作系统与研究表达的三条项目信号线">
           <div className="field-grid" aria-hidden="true" />
           <ParticleField />
-          <p className="field-label">RAW INDEX / SIGNAL EXTRACTION</p>
-          <div className="orbit orbit-one" aria-hidden="true" />
-          <div className="orbit orbit-two" aria-hidden="true" />
-          <div className="connector connector-one" aria-hidden="true" />
-          <div className="connector connector-two" aria-hidden="true" />
-          <div className="connector connector-three" aria-hidden="true" />
-          <a
-            className="signal-node node-product"
-            data-signal-node="product"
-            data-signal-copy="从用户问题出发，决定什么值得被构建。"
-            href="#exploring"
-          ><span>01</span><strong>PRODUCT</strong></a>
-          <a
-            className="signal-node node-ai"
-            data-signal-node="ai"
-            data-signal-copy="让 AI 进入真实流程，而不只停留在一次回答。"
-            href="/blog/agent-knowledge-base"
-          ><span>02</span><strong>AI</strong></a>
-          <a
-            className="signal-node node-system"
-            data-signal-node="system"
-            data-signal-copy="把一次答案沉淀成可以持续运转的方法。"
-            href="/about"
-          ><span>03</span><strong>SYSTEM</strong></a>
-          <a
-            className="signal-node node-writing"
-            data-signal-node="writing"
-            data-signal-copy="用写作校准判断，也让经验开始复利。"
-            href="/blog"
-          ><span>04</span><strong>WRITING</strong></a>
-          <button
-            className="field-center"
-            type="button"
-            data-filter-toggle
-            aria-label="向下滚动或点击过滤曲线噪声"
-            aria-pressed="false"
-          >
+          <p className="field-label">PROJECT INDEX / SIGNAL EXTRACTION</p>
+          {explorations.map((item) => (
+            <a
+              className={`signal-node project-signal-${item.signalIndex}`}
+              data-project-signal={item.id}
+              data-signal-copy={item.description}
+              href={`#story-${item.id}`}
+              key={item.id}
+            ><span>{item.signalIndex}</span><strong>{item.title}</strong></a>
+          ))}
+          <div className="field-center" aria-hidden="true">
             <span data-filter-status>NOISE</span>
             <strong data-filter-value>/ 00</strong>
             <small data-filter-hint>SCROLL TO FILTER</small>
-          </button>
-          <p className="field-caption" data-field-caption>RAW CURVE → FILTER WINDOW → SIGNAL</p>
+          </div>
+          <p className="sr-only" data-filter-announcement aria-live="polite">三条项目线等待过滤</p>
+          <p className="field-caption" data-field-caption>THREE PROJECT LINES / SCROLL TO FILTER</p>
         </div>
       </section>
 

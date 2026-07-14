@@ -6,14 +6,13 @@
     const status = document.querySelector("[data-filter-status]");
     const value = document.querySelector("[data-filter-value]");
     const hint = document.querySelector("[data-filter-hint]");
-    const toggle = document.querySelector("[data-filter-toggle]");
+    const announcement = document.querySelector("[data-filter-announcement]");
+    const signalField = document.querySelector(".signal-field");
     if (status) status.textContent = "SIGNAL";
     if (value) value.textContent = "/ FOUND";
     if (hint) hint.textContent = "STATIC SIGNAL";
-    if (toggle) {
-      toggle.setAttribute("aria-pressed", "true");
-      toggle.disabled = true;
-    }
+    if (announcement) announcement.textContent = "三条项目线已完成过滤";
+    if (signalField) signalField.classList.add("is-filtered");
     return;
   }
 
@@ -183,43 +182,55 @@
 
   const signalField = document.querySelector(".signal-field");
   const signalCanvas = signalField?.querySelector("[data-signal-canvas]");
-  const filterToggle = signalField?.querySelector("[data-filter-toggle]");
   const filterStatus = signalField?.querySelector("[data-filter-status]");
   const filterValue = signalField?.querySelector("[data-filter-value]");
   const filterHint = signalField?.querySelector("[data-filter-hint]");
+  const filterAnnouncement = signalField?.querySelector("[data-filter-announcement]");
   const fieldCaption = signalField?.querySelector("[data-field-caption]");
   const signalNodes = signalField
-    ? Array.from(signalField.querySelectorAll("[data-signal-node]"))
+    ? Array.from(signalField.querySelectorAll("[data-project-signal]"))
+    : [];
+  const hero = signalField?.closest(".hero");
+  const projectSteps = hero
+    ? Array.from(hero.querySelectorAll("[data-project-step]"))
     : [];
 
-  if (signalField && signalCanvas && filterToggle) {
+  if (signalField && signalCanvas && signalNodes.length) {
     const context = signalCanvas.getContext("2d");
 
     if (context) {
       root.classList.add("signal-canvas-enabled");
 
-      const hero = signalField.closest(".hero");
       const accent = [240, 74, 36];
       const paper = [247, 243, 233];
-      const pointer = { x: 0, active: false };
-      const nodePositions = { product: 0.12, ai: 0.36, system: 0.63, writing: 0.88 };
+      const pointer = { x: 0, y: 0, active: false };
+      const projectKeys = signalNodes.map((node) => node.dataset.projectSignal).filter(Boolean);
+      const projectMeta = new Map(signalNodes.map((node) => [
+        node.dataset.projectSignal,
+        {
+          copy: node.dataset.signalCopy,
+          title: node.querySelector("strong")?.textContent || "项目",
+        },
+      ]));
       let width = 0;
       let height = 0;
       let pixelRatio = 1;
-      let curvePoints = [];
-      let noisePoints = [];
+      let projectCurves = [];
+      let projectProgress = projectKeys.map(() => 0);
+      let projectTargets = projectKeys.map(() => 0);
       let filterProgress = 0;
-      let filterTarget = 0;
-      let manualTarget = null;
-      let activeNode = null;
+      let activeStoryProject = null;
+      let hoverProject = null;
       let visible = false;
       let frameId = 0;
       let previousTime = 0;
       let lastPercent = -1;
+      let lastAnnouncement = "";
       let scrollQueued = false;
 
       const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
       const mix = (start, end, amount) => start + (end - start) * amount;
+      const average = (values) => values.reduce((total, value) => total + value, 0) / Math.max(1, values.length);
       const smooth = (value) => {
         const amount = clamp(value);
         return amount * amount * (3 - 2 * amount);
@@ -229,47 +240,55 @@
         return value - Math.floor(value);
       };
 
-      const cleanRatioAt = (t) => (
-        0.82
-        - Math.pow(t, 0.88) * 0.66
-        + Math.sin(t * Math.PI * 3.2) * 0.025
-        + Math.sin(t * Math.PI * 8.6) * 0.009
-      );
-
-      const buildCurve = () => {
-        const left = 22;
-        const right = width - 18;
-        const top = 58;
-        const bottom = height - 76;
-        const plotHeight = bottom - top;
+      const buildCurves = () => {
+        const left = 24;
+        const right = width - 24;
+        const top = 86;
+        const bottom = height - 104;
+        const bandHeight = (bottom - top) / projectKeys.length;
         const count = width < 560 ? 84 : 132;
 
-        curvePoints = Array.from({ length: count }, (_, index) => {
-          const t = index / (count - 1);
-          const cleanY = top + cleanRatioAt(t) * plotHeight;
-          const pulse = Math.sin(index * 1.91) * 10 + Math.sin(index * 0.47) * 7;
-          const spike = index % 17 === 0
-            ? (seeded(index + 4) - 0.5) * 72
-            : index % 29 === 0
-              ? (seeded(index + 9) - 0.5) * 94
-              : 0;
-          return {
-            t,
-            x: mix(left, right, t),
-            cleanY,
-            rawY: cleanY + pulse + spike,
+        projectCurves = projectKeys.map((key, lineIndex) => {
+          const seed = (lineIndex + 1) * 41;
+          const center = top + bandHeight * (lineIndex + 0.5);
+          const cleanYAt = (t) => {
+            const direction = lineIndex === 0 ? -13 : lineIndex === 1 ? -7 : 10;
+            const wave = Math.sin(t * Math.PI * (2.1 + lineIndex * 0.35) + lineIndex) * (8 + lineIndex * 2);
+            const detail = Math.sin(t * Math.PI * 7.2 + seed) * 2.5;
+            return center + (t - 0.5) * direction + wave + detail;
           };
-        });
-
-        const dotCount = width < 560 ? 54 : 92;
-        noisePoints = Array.from({ length: dotCount }, (_, index) => {
-          const t = seeded(index + 33);
-          const cleanY = top + cleanRatioAt(t) * plotHeight;
+          const points = Array.from({ length: count }, (_, index) => {
+            const t = index / (count - 1);
+            const cleanY = cleanYAt(t);
+            const pulse = Math.sin(index * (1.31 + lineIndex * 0.2) + seed) * 10
+              + Math.sin(index * 0.43 + lineIndex) * 7;
+            const spike = index % (17 + lineIndex * 3) === 0
+              ? (seeded(index + seed) - 0.5) * Math.min(66, bandHeight * 0.48)
+              : 0;
+            return {
+              t,
+              x: mix(left, right, t),
+              cleanY,
+              rawY: cleanY + pulse + spike,
+            };
+          });
+          const dotCount = width < 560 ? 24 : 38;
+          const noisePoints = Array.from({ length: dotCount }, (_, index) => {
+            const t = seeded(index + seed + 12);
+            const cleanY = cleanYAt(t);
+            return {
+              x: mix(left, right, t),
+              y: cleanY + (seeded(index + seed + 71) - 0.5) * Math.min(78, bandHeight * 0.7),
+              size: 0.65 + seeded(index + seed + 20) * 1.35,
+              opacity: 0.12 + seeded(index + seed + 45) * 0.34,
+            };
+          });
           return {
-            x: mix(left, right, t),
-            y: cleanY + (seeded(index + 71) - 0.5) * (45 + seeded(index + 12) * 90),
-            size: 0.7 + seeded(index + 20) * 1.7,
-            opacity: 0.16 + seeded(index + 45) * 0.45,
+            key,
+            bandTop: top + bandHeight * lineIndex,
+            bandBottom: top + bandHeight * (lineIndex + 1),
+            points,
+            noisePoints,
           };
         });
       };
@@ -284,142 +303,167 @@
         signalCanvas.style.width = `${width}px`;
         signalCanvas.style.height = `${height}px`;
         context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-        buildCurve();
+        buildCurves();
       };
 
-      const filterAmountAt = (x) => {
-        const halfWidth = mix(width * 0.015, width * 0.43, smooth(filterProgress));
+      const filterAmountAt = (lineIndex, x) => {
+        const progress = projectProgress[lineIndex] || 0;
+        const halfWidth = mix(width * 0.015, width * 0.58, smooth(progress));
         const feather = Math.max(24, width * 0.055);
-        return smooth((halfWidth - Math.abs(x - width / 2)) / feather) * filterProgress;
+        return smooth((halfWidth - Math.abs(x - width / 2)) / feather) * progress;
       };
 
-      const curveYAt = (t) => {
-        const index = Math.round(clamp(t) * (curvePoints.length - 1));
-        const point = curvePoints[index];
-        return mix(point.rawY, point.cleanY, filterAmountAt(point.x));
+      const curveYAt = (lineIndex, t) => {
+        const curve = projectCurves[lineIndex];
+        if (!curve) return height / 2;
+        const index = Math.round(clamp(t) * (curve.points.length - 1));
+        const point = curve.points[index];
+        return mix(point.rawY, point.cleanY, filterAmountAt(lineIndex, point.x));
       };
 
-      const updateScrollTarget = () => {
-        if (manualTarget !== null) {
-          filterTarget = manualTarget;
+      const updateScrollTargets = () => {
+        if (window.innerWidth <= 1100 || !hero || projectSteps.length !== projectKeys.length) {
+          projectTargets = projectKeys.map(() => 1);
+          projectProgress = projectTargets.slice();
+          filterProgress = 1;
           return;
         }
 
-        if (window.innerWidth > 1100 && hero) {
-          const stickyTop = Number.parseFloat(window.getComputedStyle(signalField).top) || 0;
-          const range = Math.max(1, hero.offsetHeight - signalField.offsetHeight - stickyTop);
-          filterTarget = clamp((window.scrollY - hero.offsetTop) / range);
-        } else {
-          const rect = signalField.getBoundingClientRect();
-          filterTarget = clamp((window.innerHeight * 0.78 - rect.top) / (window.innerHeight * 0.52));
+        const stickyTop = Number.parseFloat(window.getComputedStyle(signalField).top) || 82;
+        const stickyRange = Math.max(1, hero.offsetHeight - signalField.offsetHeight - stickyTop);
+        const overallProgress = clamp((window.scrollY - hero.offsetTop) / stickyRange);
+        const introLead = 0.14;
+        const completionPoint = 0.9;
+        const segmentSize = (completionPoint - introLead) / projectKeys.length;
+        projectTargets = projectKeys.map((_, index) => (
+          clamp((overallProgress - introLead - segmentSize * index) / segmentSize)
+        ));
+        if (overallProgress >= 0.94) {
+          projectProgress = projectTargets.slice();
+          filterProgress = 1;
         }
       };
 
       const updateStatus = () => {
         const percent = Math.round(filterProgress * 100);
-        if (percent === lastPercent) return;
-        lastPercent = percent;
+        const effectiveProject = hoverProject || activeStoryProject;
+        const activeTitle = projectMeta.get(effectiveProject)?.title;
+        const phase = filterProgress < 0.025 ? "noise" : filterProgress < 0.985 ? "filtering" : "signal";
 
-        if (filterProgress < 0.025) {
-          filterStatus.textContent = "NOISE";
-          filterValue.textContent = "/ 00";
-          if (filterHint) filterHint.textContent = "SCROLL TO FILTER";
-          filterToggle.setAttribute("aria-label", "向下滚动或点击过滤曲线噪声");
-        } else if (filterProgress < 0.985) {
-          filterStatus.textContent = "FILTERING";
-          filterValue.textContent = `/ ${String(percent).padStart(2, "0")}`;
-          if (filterHint) filterHint.textContent = "REMOVING MID NOISE";
-          filterToggle.setAttribute("aria-label", `曲线噪声过滤进度 ${percent}%`);
-        } else {
-          filterStatus.textContent = "SIGNAL";
-          filterValue.textContent = "/ FOUND";
-          if (filterHint) filterHint.textContent = "SCROLL UP TO RESTORE";
-          filterToggle.setAttribute("aria-label", "恢复原始噪声曲线");
+        if (percent !== lastPercent) {
+          lastPercent = percent;
+          if (phase === "noise") {
+            filterStatus.textContent = "NOISE";
+            filterValue.textContent = "/ 00";
+            if (filterHint) filterHint.textContent = "SCROLL TO FILTER";
+          } else if (phase === "filtering") {
+            filterStatus.textContent = "FILTERING";
+            filterValue.textContent = `/ ${String(percent).padStart(2, "0")}`;
+            if (filterHint) filterHint.textContent = activeTitle ? activeTitle.toUpperCase() : "EXTRACTING SIGNAL";
+          } else {
+            filterStatus.textContent = "SIGNAL";
+            filterValue.textContent = "/ FOUND";
+            if (filterHint) filterHint.textContent = "THREE LINES RESOLVED";
+          }
         }
 
-        const filtered = filterProgress > 0.82;
+        const announcementKey = `${phase}:${effectiveProject || "none"}`;
+        if (announcementKey !== lastAnnouncement && filterAnnouncement) {
+          lastAnnouncement = announcementKey;
+          filterAnnouncement.textContent = phase === "noise"
+            ? "三条项目线等待过滤"
+            : phase === "signal"
+              ? "三条项目线已完成过滤"
+              : `正在过滤${activeTitle || "项目"}信号线`;
+        }
+
+        const filtered = filterProgress > 0.985;
         signalField.classList.toggle("is-filtered", filtered);
-        filterToggle.setAttribute("aria-pressed", String(filterTarget > 0.5));
+        if (!effectiveProject && fieldCaption) {
+          fieldCaption.textContent = filtered
+            ? "SIGNAL FOUND / THREE PROJECTS"
+            : "THREE PROJECT LINES / SCROLL TO FILTER";
+        }
       };
 
       const drawFilterWindow = () => {
-        if (filterProgress < 0.015) return;
-        const halfWidth = mix(width * 0.015, width * 0.43, smooth(filterProgress));
+        const effectiveProject = hoverProject || activeStoryProject;
+        const activeIndex = effectiveProject ? projectKeys.indexOf(effectiveProject) : projectProgress.findIndex((value) => value > 0.01 && value < 0.995);
+        if (activeIndex < 0) return;
+        const curve = projectCurves[activeIndex];
+        const progress = projectProgress[activeIndex];
+        if (!curve || progress < 0.015) return;
+        const halfWidth = mix(width * 0.015, width * 0.58, smooth(progress));
         const left = width / 2 - halfWidth;
         const right = width / 2 + halfWidth;
         const shade = context.createLinearGradient(left, 0, right, 0);
         shade.addColorStop(0, "rgba(240, 74, 36, 0)");
-        shade.addColorStop(0.5, `rgba(240, 74, 36, ${0.025 + filterProgress * 0.025})`);
+        shade.addColorStop(0.5, `rgba(240, 74, 36, ${0.018 + progress * 0.032})`);
         shade.addColorStop(1, "rgba(240, 74, 36, 0)");
         context.fillStyle = shade;
-        context.fillRect(left, 40, right - left, height - 92);
-        context.strokeStyle = `rgba(240, 74, 36, ${0.18 + filterProgress * 0.34})`;
+        context.fillRect(left, curve.bandTop + 8, right - left, curve.bandBottom - curve.bandTop - 16);
+        context.strokeStyle = `rgba(240, 74, 36, ${0.18 + progress * 0.34})`;
         context.lineWidth = 0.7;
         [left, right].forEach((x) => {
           context.beginPath();
-          context.moveTo(x, 48);
-          context.lineTo(x, height - 54);
+          context.moveTo(x, curve.bandTop + 10);
+          context.lineTo(x, curve.bandBottom - 10);
           context.stroke();
         });
       };
 
       const drawNoisePoints = () => {
-        noisePoints.forEach((point) => {
-          const filtered = filterAmountAt(point.x);
-          const opacity = point.opacity * (1 - filtered * 0.96);
-          if (opacity < 0.012) return;
-          context.fillStyle = `rgba(${paper.join(", ")}, ${opacity})`;
-          context.beginPath();
-          context.arc(point.x, point.y, point.size * (1 - filtered * 0.55), 0, Math.PI * 2);
-          context.fill();
+        projectCurves.forEach((curve, lineIndex) => {
+          curve.noisePoints.forEach((point) => {
+            const filtered = filterAmountAt(lineIndex, point.x);
+            const opacity = point.opacity * (1 - filtered * 0.97);
+            if (opacity < 0.012) return;
+            context.fillStyle = `rgba(${paper.join(", ")}, ${opacity})`;
+            context.beginPath();
+            context.arc(point.x, point.y, point.size * (1 - filtered * 0.55), 0, Math.PI * 2);
+            context.fill();
+          });
         });
       };
 
-      const drawCurve = () => {
-        context.strokeStyle = "rgba(247, 243, 233, 0.5)";
-        context.lineWidth = 1;
-        context.beginPath();
-        curvePoints.forEach((point, index) => {
-          const y = mix(point.rawY, point.cleanY, filterAmountAt(point.x));
-          if (index === 0) context.moveTo(point.x, y);
-          else context.lineTo(point.x, y);
+      const drawCurves = () => {
+        const effectiveProject = hoverProject || activeStoryProject;
+        projectCurves.forEach((curve, lineIndex) => {
+          const progress = projectProgress[lineIndex];
+          const active = curve.key === effectiveProject;
+          context.strokeStyle = active
+            ? `rgba(${accent.join(", ")}, ${0.58 + progress * 0.42})`
+            : `rgba(${paper.join(", ")}, ${0.28 + progress * 0.42})`;
+          context.lineWidth = active ? 1.8 : progress > 0.985 ? 1.35 : 1;
+          context.beginPath();
+          curve.points.forEach((point, index) => {
+            const y = mix(point.rawY, point.cleanY, filterAmountAt(lineIndex, point.x));
+            if (index === 0) context.moveTo(point.x, y);
+            else context.lineTo(point.x, y);
+          });
+          context.stroke();
         });
-        context.stroke();
-
-        if (filterProgress < 0.015) return;
-        const halfWidth = mix(width * 0.015, width * 0.43, smooth(filterProgress));
-        context.save();
-        context.beginPath();
-        context.rect(width / 2 - halfWidth, 0, halfWidth * 2, height);
-        context.clip();
-        context.strokeStyle = `rgba(${accent.join(", ")}, ${0.35 + filterProgress * 0.65})`;
-        context.lineWidth = 1.7;
-        context.beginPath();
-        curvePoints.forEach((point, index) => {
-          if (index === 0) context.moveTo(point.x, point.cleanY);
-          else context.lineTo(point.x, point.cleanY);
-        });
-        context.stroke();
-        context.restore();
       };
 
       const drawFocus = () => {
-        const focusKey = activeNode && nodePositions[activeNode] !== undefined
-          ? activeNode
-          : pointer.active
-            ? "pointer"
-            : null;
-        if (!focusKey) return;
-        const t = focusKey === "pointer"
-          ? clamp(pointer.x / width)
-          : nodePositions[focusKey];
+        if (!pointer.active || !projectCurves.length) return;
+        const t = clamp(pointer.x / width);
+        const effectiveProject = hoverProject || activeStoryProject;
+        let lineIndex = effectiveProject ? projectKeys.indexOf(effectiveProject) : -1;
+        if (lineIndex < 0) {
+          lineIndex = projectCurves.reduce((nearest, curve, index) => {
+            const center = (curve.bandTop + curve.bandBottom) / 2;
+            const nearestCenter = (projectCurves[nearest].bandTop + projectCurves[nearest].bandBottom) / 2;
+            return Math.abs(pointer.y - center) < Math.abs(pointer.y - nearestCenter) ? index : nearest;
+          }, 0);
+        }
         const x = t * width;
-        const y = curveYAt(t);
+        const y = curveYAt(lineIndex, t);
         context.strokeStyle = "rgba(247, 243, 233, 0.16)";
         context.lineWidth = 0.7;
         context.beginPath();
-        context.moveTo(x, 44);
-        context.lineTo(x, height - 52);
+        context.moveTo(x, projectCurves[lineIndex].bandTop + 8);
+        context.lineTo(x, projectCurves[lineIndex].bandBottom - 8);
         context.stroke();
         context.fillStyle = `rgba(${accent.join(", ")}, 0.95)`;
         context.beginPath();
@@ -433,16 +477,23 @@
         const delta = previousTime ? Math.min(40, timestamp - previousTime) : 16;
         previousTime = timestamp;
         const easing = Math.min(1, delta * 0.009);
-        filterProgress = mix(filterProgress, filterTarget, easing);
-        if (Math.abs(filterProgress - filterTarget) < 0.001) filterProgress = filterTarget;
+        let moving = false;
+        projectProgress = projectProgress.map((progress, index) => {
+          const target = projectTargets[index];
+          const next = mix(progress, target, easing);
+          if (Math.abs(next - target) < 0.001) return target;
+          moving = true;
+          return next;
+        });
+        filterProgress = average(projectProgress);
 
         context.clearRect(0, 0, width, height);
         drawFilterWindow();
         drawNoisePoints();
-        drawCurve();
+        drawCurves();
         drawFocus();
         updateStatus();
-        frameId = window.requestAnimationFrame(draw);
+        if (moving) frameId = window.requestAnimationFrame(draw);
       };
 
       const startDrawing = () => {
@@ -457,8 +508,7 @@
         scrollQueued = true;
         window.requestAnimationFrame(() => {
           scrollQueued = false;
-          manualTarget = null;
-          updateScrollTarget();
+          updateScrollTargets();
           startDrawing();
         });
       };
@@ -466,32 +516,40 @@
       signalField.addEventListener("pointermove", (event) => {
         const rect = signalField.getBoundingClientRect();
         pointer.x = event.clientX - rect.left;
+        pointer.y = event.clientY - rect.top;
         pointer.active = true;
+        startDrawing();
       });
 
       signalField.addEventListener("pointerleave", () => {
         pointer.active = false;
-      });
-
-      filterToggle.addEventListener("click", (event) => {
-        event.stopPropagation();
-        manualTarget = filterTarget > 0.5 ? 0 : 1;
-        filterTarget = manualTarget;
         startDrawing();
       });
 
+      const updateProjectState = () => {
+        const activeProject = hoverProject || activeStoryProject;
+        signalField.classList.toggle("has-active-node", Boolean(activeProject));
+        signalNodes.forEach((node) => node.classList.toggle("is-active", node.dataset.projectSignal === activeProject));
+        projectSteps.forEach((step) => step.classList.toggle("is-active", step.dataset.projectStep === activeProject));
+        if (fieldCaption) {
+          fieldCaption.textContent = activeProject
+            ? projectMeta.get(activeProject)?.copy || "THREE PROJECT LINES / SCROLL TO FILTER"
+            : filterProgress > 0.985
+              ? "SIGNAL FOUND / THREE PROJECTS"
+              : "THREE PROJECT LINES / SCROLL TO FILTER";
+        }
+        lastPercent = -1;
+        startDrawing();
+      };
+
       signalNodes.forEach((node) => {
         const activate = () => {
-          activeNode = node.dataset.signalNode;
-          signalField.classList.add("has-active-node");
-          signalNodes.forEach((item) => item.classList.toggle("is-active", item === node));
-          if (fieldCaption) fieldCaption.textContent = node.dataset.signalCopy;
+          hoverProject = node.dataset.projectSignal;
+          updateProjectState();
         };
         const deactivate = () => {
-          activeNode = null;
-          signalField.classList.remove("has-active-node");
-          signalNodes.forEach((item) => item.classList.remove("is-active"));
-          if (fieldCaption) fieldCaption.textContent = "RAW CURVE → FILTER WINDOW → SIGNAL";
+          hoverProject = null;
+          updateProjectState();
         };
         node.addEventListener("pointerenter", activate);
         node.addEventListener("pointerleave", deactivate);
@@ -499,11 +557,30 @@
         node.addEventListener("blur", deactivate);
       });
 
+      if (projectSteps.length) {
+        const visibleSteps = new Map();
+        const projectObserver = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) visibleSteps.set(entry.target.dataset.projectStep, entry.intersectionRatio);
+              else visibleSteps.delete(entry.target.dataset.projectStep);
+            });
+            const nextActive = Array.from(visibleSteps.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+            if (nextActive !== activeStoryProject) {
+              activeStoryProject = nextActive;
+              updateProjectState();
+            }
+          },
+          { root: null, rootMargin: "-34% 0px -34% 0px", threshold: [0, 0.2, 0.4, 0.6] },
+        );
+        projectSteps.forEach((step) => projectObserver.observe(step));
+      }
+
       const canvasObserver = new IntersectionObserver(
         ([entry]) => {
           visible = entry.isIntersecting;
           if (visible) {
-            updateScrollTarget();
+            updateScrollTargets();
             startDrawing();
           } else if (frameId) {
             window.cancelAnimationFrame(frameId);
@@ -514,19 +591,33 @@
       );
 
       resizeCanvas();
-      updateScrollTarget();
+      updateScrollTargets();
       canvasObserver.observe(signalField);
       window.addEventListener("scroll", queueScrollUpdate, { passive: true });
 
       if ("ResizeObserver" in window) {
         const resizeObserver = new ResizeObserver(() => {
           resizeCanvas();
-          updateScrollTarget();
+          updateScrollTargets();
+          startDrawing();
         });
         resizeObserver.observe(signalField);
       } else {
-        window.addEventListener("resize", resizeCanvas);
+        window.addEventListener("resize", () => {
+          resizeCanvas();
+          updateScrollTargets();
+          startDrawing();
+        });
       }
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && frameId) {
+          window.cancelAnimationFrame(frameId);
+          frameId = 0;
+        } else {
+          startDrawing();
+        }
+      });
     }
   }
 
