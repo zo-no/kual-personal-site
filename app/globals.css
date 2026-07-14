@@ -126,7 +126,7 @@ nav a:hover::after {
   max-width: 860px;
   margin: 32px 0 36px;
   font-family: "Songti SC", "STSong", Georgia, serif;
-  font-size: clamp(3.2rem, 5.45vw, 6.5rem);
+  font-size: clamp(3.2rem, 4.45vw, 5.3rem);
   font-weight: 400;
   line-height: 0.98;
   letter-spacing: -0.065em;
@@ -135,6 +135,12 @@ nav a:hover::after {
 .hero h1 em {
   font-style: normal;
   color: var(--signal);
+}
+
+@media (min-width: 1101px) {
+  .hero h1 em {
+    white-space: nowrap;
+  }
 }
 
 .hero-intro {
@@ -230,12 +236,14 @@ nav a:hover::after {
       transparent 100%);
   mask-image: linear-gradient(to bottom, transparent, black 42%, black 58%, transparent);
   animation: beam-breathe 4.8s ease-in-out infinite;
+  transition: opacity 500ms ease;
 }
 
 .wave-stack {
   position: absolute;
   inset: 0;
   opacity: 0.58;
+  transition: opacity 500ms ease;
 }
 
 .wave-trace {
@@ -314,6 +322,7 @@ nav a:hover::after {
   border-radius: 50%;
   transform: translate(-50%, -50%) scale(0.74);
   animation: core-ping 4.2s cubic-bezier(.16, .7, .35, 1) infinite;
+  transition: opacity 500ms ease;
 }
 
 .core-ripple-two { animation-delay: -1.4s; }
@@ -395,6 +404,10 @@ nav a:hover::after {
 .field-center:focus-visible {
   outline: 1px solid var(--white);
   outline-offset: 7px;
+}
+
+.field-center:disabled {
+  cursor: default;
 }
 
 .field-center span {
@@ -489,6 +502,11 @@ nav a:hover::after {
   height: 1px;
   transform-origin: 0 50%;
   background: linear-gradient(to right, rgba(240, 74, 36, 0.75), rgba(247, 243, 233, 0.14));
+  transition: opacity 420ms ease;
+}
+
+.signal-canvas-enabled .connector {
+  opacity: 0.1;
 }
 
 .connector-one { transform: rotate(-147deg); }
@@ -616,6 +634,17 @@ nav a:hover::after {
   mask-image: radial-gradient(circle at 68% 48%, black, transparent 68%);
   animation: ambient-dust 28s linear infinite;
   pointer-events: none;
+}
+
+.practice::after,
+.value-section::after,
+.more-writing::after {
+  display: none;
+}
+
+.blog-page-hero::after {
+  opacity: 0.09;
+  animation: none;
 }
 
 .practice > *,
@@ -1381,12 +1410,12 @@ footer p:last-child {
 
 html.io-enabled [data-reveal] {
   opacity: 0;
-  filter: blur(10px);
-  transform: translate3d(0, 34px, 0) scale(0.985);
+  filter: blur(4px);
+  transform: translate3d(0, 24px, 0) scale(0.992);
   transition:
-    opacity 760ms cubic-bezier(.2, .75, .2, 1),
-    filter 760ms cubic-bezier(.2, .75, .2, 1),
-    transform 760ms cubic-bezier(.2, .75, .2, 1);
+    opacity 620ms cubic-bezier(.2, .75, .2, 1),
+    filter 620ms cubic-bezier(.2, .75, .2, 1),
+    transform 620ms cubic-bezier(.2, .75, .2, 1);
   transition-delay: var(--reveal-delay, 0ms);
 }
 
@@ -1397,9 +1426,9 @@ html.io-enabled [data-reveal].is-visible {
 }
 
 html.io-enabled [data-depth] {
-  opacity: var(--io-opacity, 0.28);
-  filter: blur(var(--io-blur, 9px));
-  transform: translate3d(0, var(--io-shift, 42px), 0);
+  opacity: var(--io-opacity, 0.4);
+  filter: blur(var(--io-blur, 5px));
+  transform: translate3d(0, var(--io-shift, 30px), 0);
   transition:
     opacity 180ms linear,
     filter 180ms linear,

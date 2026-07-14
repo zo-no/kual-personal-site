@@ -21,6 +21,9 @@ test("renders the personal homepage", async () => {
   assert.match(html, /最近文章/);
   assert.match(html, /href="\/about"/);
   assert.match(html, /href="\/blog"/);
+  assert.match(html, /data-signal-canvas/);
+  assert.match(html, /data-filter-toggle/);
+  assert.match(html, /data-signal-node="writing"/);
 });
 
 test("renders the about and blog routes", async () => {

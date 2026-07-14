@@ -76,7 +76,7 @@ export default function Home() {
           >
             <span data-filter-status>NOISE</span>
             <strong data-filter-value>/ 00</strong>
-            <small>CLICK TO FILTER</small>
+            <small data-filter-hint>CLICK TO FILTER</small>
           </button>
           <p className="field-caption" data-field-caption>MOVE TO DISTURB · CLICK TO FILTER</p>
         </div>
