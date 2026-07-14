@@ -25,6 +25,7 @@ test("renders the personal homepage", async () => {
   assert.match(html, /data-filter-toggle/);
   assert.match(html, /data-signal-node="writing"/);
   assert.match(html, /data-section-link="writing"/);
+  assert.match(html, /data-route="blog"/);
 });
 
 test("renders the about and blog routes", async () => {
@@ -42,6 +43,11 @@ test("renders both articles", async () => {
   ]);
   assert.equal(knowledgeResponse.status, 200);
   assert.equal(tasteResponse.status, 200);
-  assert.match(await knowledgeResponse.text(), /最小的 AI 应用/);
-  assert.match(await tasteResponse.text(), /删除是一种责任/);
+  const [knowledgeHtml, tasteHtml] = await Promise.all([
+    knowledgeResponse.text(),
+    tasteResponse.text(),
+  ]);
+  assert.match(knowledgeHtml, /最小的 AI 应用/);
+  assert.match(knowledgeHtml, /data-reading-progress/);
+  assert.match(tasteHtml, /删除是一种责任/);
 });

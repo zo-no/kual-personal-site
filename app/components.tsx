@@ -1,46 +1,14 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 import { articles, type ArticleSummary } from "./content";
-import type { CSSProperties } from "react";
-
-const signalParticles = Array.from({ length: 44 }, (_, index) => ({
-  x: (index * 37 + 11) % 100,
-  y: ((index * 61 + 17) % 188) - 94,
-  size: 1.2 + (index % 4) * 0.65,
-  duration: 5.8 + (index % 8) * 0.72,
-  delay: -(index % 11) * 0.63,
-  drift: 16 + (index % 7) * 7,
-}));
 
 export function ParticleField() {
   return (
     <div className="particle-system" aria-hidden="true">
-      <div className="signal-beam" />
-      <div className="wave-stack">
-        <span className="wave-trace wave-trace-one" />
-        <span className="wave-trace wave-trace-two" />
-        <span className="wave-trace wave-trace-three" />
-        <span className="wave-trace wave-trace-four" />
-      </div>
-      <div className="particle-stream">
-        {signalParticles.map((particle, index) => (
-          <span
-            className="field-particle"
-            key={index}
-            style={{
-              "--particle-x": `${particle.x}%`,
-              "--particle-y": `${particle.y}px`,
-              "--particle-size": `${particle.size}px`,
-              "--particle-duration": `${particle.duration}s`,
-              "--particle-delay": `${particle.delay}s`,
-              "--particle-drift": `${particle.drift}px`,
-            } as CSSProperties}
-          />
-        ))}
-      </div>
+      <svg className="signal-curve-fallback" viewBox="0 0 800 520" preserveAspectRatio="none">
+        <path className="fallback-raw-line" d="M0 438 L38 414 L70 430 L112 365 L148 392 L188 326 L226 352 L264 294 L302 318 L342 244 L380 278 L420 218 L458 252 L498 176 L538 218 L578 142 L616 184 L656 102 L698 138 L742 66 L800 90" />
+        <path className="fallback-signal-line" d="M0 428 C120 398 168 354 250 318 C340 278 408 244 492 202 C586 155 672 116 800 82" />
+      </svg>
       <canvas className="signal-canvas" data-signal-canvas />
-      <span className="core-ripple core-ripple-one" />
-      <span className="core-ripple core-ripple-two" />
-      <span className="core-ripple core-ripple-three" />
     </div>
   );
 }
@@ -52,12 +20,20 @@ export function SiteHeader() {
         KUAL<span className="wordmark-dot">.</span>
       </a>
       <nav aria-label="主导航">
-        <a href="/about">关于</a>
-        <a href="/blog">文章</a>
+        <a href="/about" data-route="about">关于</a>
+        <a href="/blog" data-route="blog">文章</a>
         <a href="/#exploring">正在做</a>
       </nav>
       <span className="header-note">BEIJING · 2026</span>
     </header>
+  );
+}
+
+export function ReadingProgress() {
+  return (
+    <div className="reading-progress" aria-hidden="true">
+      <span data-reading-progress />
+    </div>
   );
 }
 
@@ -73,7 +49,7 @@ export function SiteFooter() {
 
 export function ArticleCard({ article }: { article: ArticleSummary }) {
   return (
-    <article className="article-card">
+    <article className="article-card" data-article-number={article.number}>
       <div className="article-card-meta">
         <span>{article.number}</span>
         <span>{article.category}</span>

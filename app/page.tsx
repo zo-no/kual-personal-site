@@ -43,7 +43,7 @@ export default function Home() {
         <div className="signal-field" aria-label="产品、AI、系统与写作的思维连接图">
           <div className="field-grid" aria-hidden="true" />
           <ParticleField />
-          <p className="field-label">MY WORKING FIELD / 01</p>
+          <p className="field-label">RAW INDEX / SIGNAL EXTRACTION</p>
           <div className="orbit orbit-one" aria-hidden="true" />
           <div className="orbit orbit-two" aria-hidden="true" />
           <div className="connector connector-one" aria-hidden="true" />
@@ -77,14 +77,14 @@ export default function Home() {
             className="field-center"
             type="button"
             data-filter-toggle
-            aria-label="切换噪声过滤效果"
+            aria-label="向下滚动或点击过滤曲线噪声"
             aria-pressed="false"
           >
             <span data-filter-status>NOISE</span>
             <strong data-filter-value>/ 00</strong>
-            <small data-filter-hint>CLICK TO FILTER</small>
+            <small data-filter-hint>SCROLL TO FILTER</small>
           </button>
-          <p className="field-caption" data-field-caption>MOVE TO DISTURB · CLICK TO FILTER</p>
+          <p className="field-caption" data-field-caption>RAW CURVE → FILTER WINDOW → SIGNAL</p>
         </div>
       </section>
 

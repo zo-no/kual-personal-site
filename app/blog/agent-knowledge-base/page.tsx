@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { MoreWriting, SiteFooter, SiteHeader } from "../../components";
+import { MoreWriting, ReadingProgress, SiteFooter, SiteHeader } from "../../components";
 import { articles } from "../../content";
 
 const article = articles[0];
@@ -10,6 +10,7 @@ export default function KnowledgeBaseArticle() {
   return (
     <main>
       <SiteHeader />
+      <ReadingProgress />
       <article className="article-page">
         <header className="article-hero">
           <p className="eyebrow">{article.category}</p>

@@ -39,10 +39,13 @@ a:focus-visible {
 }
 
 main {
-  overflow: hidden;
+  overflow: clip;
 }
 
 .site-header {
+  position: sticky;
+  z-index: 30;
+  top: 0;
   min-height: 82px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -50,6 +53,8 @@ main {
   gap: 24px;
   padding: 0 4.5vw;
   border-bottom: 1px solid var(--line);
+  background: rgba(241, 237, 226, 0.92);
+  backdrop-filter: blur(12px);
 }
 
 .wordmark {
@@ -87,6 +92,16 @@ nav a::after {
 }
 
 nav a:hover::after {
+  right: 0;
+}
+
+.site-header nav a.is-current,
+.site-header nav a[aria-current="page"] {
+  color: var(--ink);
+}
+
+.site-header nav a.is-current::after,
+.site-header nav a[aria-current="page"]::after {
   right: 0;
 }
 
@@ -579,6 +594,132 @@ nav a:hover::after {
 .connector-two { transform: rotate(-34deg); }
 .connector-three { transform: rotate(42deg); }
 
+/* Scroll-driven noisy index curve */
+
+.signal-curve-fallback {
+  position: absolute;
+  inset: 8% 0 7%;
+  width: 100%;
+  height: 85%;
+  overflow: visible;
+}
+
+.signal-curve-fallback path {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.fallback-raw-line {
+  stroke: rgba(247, 243, 233, 0.42);
+  stroke-width: 1;
+}
+
+.fallback-signal-line {
+  stroke: var(--signal);
+  stroke-width: 1.6;
+  stroke-dasharray: 260 800;
+  stroke-dashoffset: -270;
+}
+
+.signal-canvas-enabled .signal-curve-fallback {
+  opacity: 0;
+}
+
+.signal-field .orbit,
+.signal-field .connector {
+  display: none;
+}
+
+.signal-field .field-center {
+  left: 36px;
+  top: auto;
+  bottom: 32px;
+  width: 154px;
+  min-height: 68px;
+  aspect-ratio: auto;
+  align-items: flex-start;
+  padding: 12px 0 0;
+  border-top: 1px solid rgba(240, 74, 36, 0.72);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  animation: none;
+}
+
+.signal-field .field-center:hover,
+.signal-field .field-center:focus-visible {
+  transform: none;
+  box-shadow: none;
+}
+
+.signal-field .field-center:focus-visible {
+  outline-offset: 4px;
+}
+
+.signal-field .field-center strong {
+  margin-top: 4px;
+  font-size: 1.15rem;
+}
+
+.signal-field .field-center small {
+  margin-top: 7px;
+}
+
+.signal-field .signal-node {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  display: inline-flex;
+  flex-direction: row;
+  gap: 7px;
+  padding: 6px 8px;
+  border: 0;
+  border-left: 1px solid rgba(240, 74, 36, 0.68);
+  border-radius: 0;
+  background: rgba(20, 32, 28, 0.72);
+  box-shadow: none;
+  backdrop-filter: blur(6px);
+  animation: none;
+}
+
+.signal-field .signal-node span {
+  margin: 0;
+  font-size: 0.48rem;
+}
+
+.signal-field .signal-node strong {
+  font-size: 0.58rem;
+}
+
+.signal-field .signal-node:hover,
+.signal-field .signal-node:focus-visible,
+.signal-field .signal-node.is-active {
+  border-color: var(--signal);
+  background: rgba(29, 46, 40, 0.94);
+  box-shadow: none;
+}
+
+.signal-field .node-product { left: 8%; top: 69%; }
+.signal-field .node-ai { left: 31%; right: auto; top: 55%; }
+.signal-field .node-system { left: 57%; bottom: auto; top: 37%; }
+.signal-field .node-writing { right: 7%; bottom: auto; top: 18%; }
+
+@media (min-width: 1101px) {
+  .hero {
+    min-height: calc(145svh - 82px);
+    align-items: start;
+  }
+
+  .hero-copy,
+  .signal-field {
+    position: sticky;
+    top: 82px;
+    height: calc(100svh - 82px);
+    min-height: 620px;
+  }
+}
+
 .identity-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -830,6 +971,8 @@ nav a:hover::after {
 }
 
 .article-card {
+  position: relative;
+  overflow: hidden;
   min-height: 440px;
   display: flex;
   flex-direction: column;
@@ -839,10 +982,30 @@ nav a:hover::after {
   transition: background 240ms ease, color 240ms ease, transform 240ms ease;
 }
 
-.article-card:hover {
+.article-card::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: var(--signal);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 320ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.article-card:hover,
+.article-card:focus-within {
   color: var(--white);
   background: var(--night);
   transform: translateY(-7px);
+}
+
+.article-card:hover::before,
+.article-card:focus-within::before {
+  transform: scaleX(1);
 }
 
 .article-card-meta {
@@ -890,7 +1053,10 @@ nav a:hover::after {
 
 .article-card:hover .article-card-meta,
 .article-card:hover .article-date,
-.article-card:hover .article-card-body > p:last-child {
+.article-card:hover .article-card-body > p:last-child,
+.article-card:focus-within .article-card-meta,
+.article-card:focus-within .article-date,
+.article-card:focus-within .article-card-body > p:last-child {
   color: rgba(247, 243, 233, 0.64);
 }
 
@@ -909,7 +1075,14 @@ nav a:hover::after {
   transition: transform 220ms ease;
 }
 
-.article-card:hover > a span {
+.article-card > a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.article-card:hover > a span,
+.article-card:focus-within > a span {
   transform: translate(4px, -4px);
 }
 
@@ -1282,6 +1455,11 @@ footer p:last-child {
   color: rgba(247, 243, 233, 0.6);
 }
 
+.blog-page-hero h1 > span,
+.blog-page-hero h1 > em {
+  display: block;
+}
+
 .blog-index {
   display: block;
 }
@@ -1330,6 +1508,27 @@ footer p:last-child {
 
 .article-page {
   overflow: visible;
+}
+
+.reading-progress {
+  position: fixed;
+  z-index: 40;
+  top: 81px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  pointer-events: none;
+}
+
+.reading-progress span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--signal);
+  transform: scaleX(var(--reading-progress, 0));
+  transform-origin: left;
+  transition: transform 80ms linear;
+  will-change: transform;
 }
 
 .article-hero {
@@ -1661,6 +1860,10 @@ html.page-hidden * {
     padding: 0 20px;
   }
 
+  .reading-progress {
+    top: 69px;
+  }
+
   nav {
     gap: 18px;
   }
@@ -1707,6 +1910,18 @@ html.page-hidden * {
   .field-center {
     width: 138px;
   }
+
+  .signal-field .field-center {
+    left: 20px;
+    bottom: 18px;
+    width: 132px;
+    min-height: 62px;
+  }
+
+  .signal-field .node-product { left: 5%; top: 69%; }
+  .signal-field .node-ai { left: 29%; right: auto; top: 55%; }
+  .signal-field .node-system { left: 55%; bottom: auto; top: 37%; }
+  .signal-field .node-writing { right: 4%; bottom: auto; top: 18%; }
 
   .node-product { left: 5%; top: 19%; }
   .node-ai { right: 4%; top: 21%; }
@@ -1833,6 +2048,12 @@ html.page-hidden * {
 
   .page-hero h1 {
     font-size: clamp(3.25rem, 15vw, 5.2rem);
+  }
+
+  .blog-page-hero h1 {
+    font-size: clamp(2.45rem, 10.5vw, 3.1rem);
+    line-height: 1.04;
+    letter-spacing: -0.05em;
   }
 
   .profile-label span {

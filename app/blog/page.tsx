@@ -13,7 +13,7 @@ export default function BlogPage() {
       <SiteHeader />
       <section className="page-hero blog-page-hero">
         <p className="eyebrow">WRITING / 文章</p>
-        <h1>把经验写下来，<br /><em>让判断开始复利。</em></h1>
+        <h1><span>把经验写下来，</span><em>让判断开始复利。</em></h1>
         <p className="page-deck">关于 AI、产品、系统，以及怎样更有意识地工作与生活。</p>
       </section>
       <section className="blog-index section-shell">
